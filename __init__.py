@@ -112,3 +112,40 @@ def logout():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+# --- ROUTE 1 : VOIR TOUS LES EMPRUNTS (ADMIN) ---
+@app.route('/admin/emprunts')
+def voir_emprunts():
+    if not session.get('authentifie'): # Sécurité Admin
+        return redirect(url_for('authentification'))
+    
+    conn = get_db_connection()
+    # On fait une jointure pour avoir le titre du livre dans le tableau des emprunts
+    query = '''
+        SELECT emprunts.id, livres.titre, emprunts.utilisateur, emprunts.date_emprunt 
+        FROM emprunts 
+        JOIN livres ON emprunts.livre_id = livres.id
+    '''
+    emprunts = conn.execute(query).fetchall()
+    conn.close()
+    return render_template('bibliotheque.html', emprunts=emprunts, mode='admin_emprunts')
+
+# --- ROUTE 2 : SUPPRIMER UN LIVRE (ADMIN) ---
+@app.route('/admin/supprimer_livre/<int:livre_id>')
+def supprimer_livre_v2(livre_id):
+    if not session.get('authentifie'):
+        return redirect(url_for('authentification'))
+    
+    conn = get_db_connection()
+    conn.execute('DELETE FROM livres WHERE id = ?', (livre_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('liste_livres'))
+
+# --- ROUTE 3 : INTERFACE PRINCIPALE (BIBLIOTHÈQUE) ---
+@app.route('/bibliotheque')
+def liste_livres():
+    conn = get_db_connection()
+    livres = conn.execute('SELECT * FROM livres').fetchall()
+    conn.close()
+    return render_template('bibliotheque.html', livres=livres, mode='liste')
