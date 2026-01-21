@@ -1,12 +1,10 @@
-from flask import Flask, render_template, jsonify, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 import os
 
 app = Flask(__name__)
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
-# Utiliser un chemin absolu pour la base de données sur Alwaysdata
-# Cela évite les erreurs où SQLite ne trouve pas le fichier .db
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "database.db")
 
@@ -16,104 +14,101 @@ def get_db_connection():
     return conn
 
 # --- AUTHENTIFICATION ---
-
-def est_authentifie():
-    return session.get('authentifie')
-
-def est_authentifie_user():
-    return session.get('user_authentifie')
+def est_admin(): return session.get('authentifie')
+def est_user(): return session.get('user_authentifie')
 
 @app.route('/')
-def hello_world():
+def index():
     return render_template('hello.html')
 
-# --- SEQUENCE 5 : AUTHENTIFICATION USER (user / 12345) ---
+# --- GESTION DES LIVRES ---
 
-@app.route('/authentification_user', methods=['GET', 'POST'])
-def authentification_user():
-    if request.method == 'POST':
-        # On vérifie 'username' car c'est souvent le nom dans le HTML
-        login = request.form.get('username') or request.form.get('login')
-        password = request.form.get('password')
+@app.route('/biblio')
+def consultation_livres():
+    conn = get_db_connection()
+    livres = conn.execute('SELECT * FROM livres').fetchall()
+    conn.close()
+    return render_template('read_data.html', data=livres)
 
-        if login == "user" and password == "12345":
-            session['user_authentifie'] = True
-            return redirect(url_for('fiche_nom'))
-        else:
-            return render_template('formulaire_authentification.html', error=True)
+@app.route('/biblio/disponibles')
+def livres_dispo():
+    conn = get_db_connection()
+    livres = conn.execute('SELECT * FROM livres WHERE stock > 0').fetchall()
+    conn.close()
+    return render_template('read_data.html', data=livres)
 
-    return render_template('formulaire_authentification.html', error=False)
-
-# --- SEQUENCE 5 : RECHERCHE PAR NOM ---
-
-# Ajout de strict_slashes=False pour éviter l'erreur 404 si tu ajoutes un / à la fin
-@app.route('/fiche_nom/', strict_slashes=False)
-def fiche_nom():
-    if not est_authentifie_user():
+@app.route('/biblio/emprunter/<int:livre_id>')
+def emprunter(livre_id):
+    if not est_user():
         return redirect(url_for('authentification_user'))
-    
-    # Formulaire simple en HTML pour la recherche
-    return '''
-        <html>
-            <body>
-                <h2>Recherche de client par nom</h2>
-                <form action="/recherche_resultat" method="GET">
-                    Nom : <input type="text" name="nom_client">
-                    <input type="submit" value="Chercher">
-                </form>
-                <br><a href="/logout_user">Se déconnecter</a>
-            </body>
-        </html>
-    '''
-
-@app.route('/recherche_resultat')
-def recherche_resultat():
-    if not est_authentifie_user():
-        return redirect(url_for('authentification_user'))
-
-    nom_recherche = request.args.get('nom_client')
     
     conn = get_db_connection()
-    # Utilisation de LIKE pour être plus souple (trouve "Dupont" même si on tape "dupont")
-    cursor = conn.execute('SELECT * FROM clients WHERE nom LIKE ?', (nom_recherche,))
-    data = cursor.fetchall()
+    livre = conn.execute('SELECT * FROM livres WHERE id = ?', (livre_id,)).fetchone()
+    
+    if livre and livre['stock'] > 0:
+        conn.execute('UPDATE livres SET stock = stock - 1 WHERE id = ?', (livre_id,))
+        conn.execute('INSERT INTO emprunts (livre_id, utilisateur) VALUES (?, ?)', (livre_id, 'user'))
+        conn.commit()
     conn.close()
+    return redirect(url_for('consultation_livres'))
 
-    if not data:
-        return f"<h3>Aucun client trouvé pour le nom : {nom_recherche}</h3><a href='/fiche_nom'>Retour</a>"
+# --- ADMINISTRATION (AJOUT / SUPPRESSION) ---
 
-    return render_template('read_data.html', data=data)
+@app.route('/admin/supprimer/<int:livre_id>')
+def supprimer_livre(livre_id):
+    if not est_admin():
+        return redirect(url_for('authentification'))
+    
+    conn = get_db_connection()
+    conn.execute('DELETE FROM livres WHERE id = ?', (livre_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('consultation_livres'))
 
-# --- ROUTES ADMIN EXISTANTES ---
+@app.route('/admin/ajouter', methods=['GET', 'POST'])
+def ajouter_livre():
+    if not est_admin():
+        return redirect(url_for('authentification'))
+    
+    if request.method == 'POST':
+        titre = request.form['titre']
+        auteur = request.form['auteur']
+        stock = request.form['stock']
+        conn = get_db_connection()
+        conn.execute('INSERT INTO livres (titre, auteur, stock) VALUES (?, ?, ?)', (titre, auteur, stock))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('consultation_livres'))
+    
+    return '''
+        <form method="post">
+            Titre: <input name="titre"><br> Auteur: <input name="auteur"><br> Stock: <input name="stock"><br>
+            <input type="submit" value="Ajouter">
+        </form>
+    '''
+
+# --- LOGIN / LOGOUT ---
 
 @app.route('/authentification', methods=['GET', 'POST'])
 def authentification():
     if request.method == 'POST':
-        login = request.form.get('username') or request.form.get('login')
-        password = request.form.get('password')
-        if login == 'admin' and password == 'password':
+        if request.form.get('username') == 'admin' and request.form.get('password') == 'password':
             session['authentifie'] = True
-            return redirect(url_for('lecture'))
-        return render_template('formulaire_authentification.html', error=True)
-    return render_template('formulaire_authentification.html', error=False)
+            return redirect(url_for('index'))
+    return render_template('formulaire_authentification.html')
 
-@app.route('/lecture')
-def lecture():
-    if not est_authentifie():
-        return redirect(url_for('authentification'))
-    return "<h2>Bravo, vous êtes authentifié en tant qu'ADMIN</h2>"
+@app.route('/authentification_user', methods=['GET', 'POST'])
+def authentification_user():
+    if request.method == 'POST':
+        if request.form.get('username') == 'user' and request.form.get('password') == '12345':
+            session['user_authentifie'] = True
+            return redirect(url_for('index'))
+    return render_template('formulaire_authentification.html')
 
-@app.route('/consultation/')
-def ReadBDD():
-    conn = get_db_connection()
-    data = conn.execute('SELECT * FROM clients;').fetchall()
-    conn.close()
-    return render_template('read_data.html', data=data)
-
-@app.route('/logout_user')
-def logout_user():
-    session.pop('user_authentifie', None)
-    return redirect(url_for('hello_world'))
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
 
 if __name__ == "__main__":
     app.run(debug=True)
