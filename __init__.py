@@ -89,13 +89,22 @@ def ajouter_livre():
 
 # --- LOGIN / LOGOUT ---
 
-@app.route('/authentification', methods=['GET', 'POST'])
-def authentification():
+@app.route('/authentification_user', methods=['GET', 'POST'])
+def authentification_user():
     if request.method == 'POST':
-        if request.form.get('username') == 'admin' and request.form.get('password') == 'password':
-            session['authentifie'] = True
-            return redirect(url_for('index'))
-    return render_template('formulaire_authentification.html')
+        # On essaie de récupérer 'username' OU 'login' au cas où
+        username_saisi = request.form.get('username') or request.form.get('login')
+        password_saisi = request.form.get('password')
+
+        if username_saisi == 'user' and password_saisi == '12345':
+            session['user_authentifie'] = True
+            # Redirige vers la bibliothèque après connexion
+            return redirect(url_for('liste_livres')) 
+        else:
+            # Si ça échoue, on affiche l'erreur sur le formulaire
+            return render_template('formulaire_authentification.html', error=True)
+
+    return render_template('formulaire_authentification.html', error=False)
 
 @app.route('/authentification_user', methods=['GET', 'POST'])
 def authentification_user():
