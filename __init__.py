@@ -106,13 +106,6 @@ def authentification_user():
 
     return render_template('formulaire_authentification.html', error=False)
 
-@app.route('/authentification_user', methods=['GET', 'POST'])
-def authentification_user():
-    if request.method == 'POST':
-        if request.form.get('username') == 'user' and request.form.get('password') == '12345':
-            session['user_authentifie'] = True
-            return redirect(url_for('index'))
-    return render_template('formulaire_authentification.html')
 
 @app.route('/logout')
 def logout():
