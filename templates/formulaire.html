@@ -2,17 +2,24 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulaire d'enregistrement d'un nouveau client</title>
+    <title>Nouvelle Tâche</title>
+    <style>body { font-family: sans-serif; padding: 20px; } input, textarea { width: 100%; margin-bottom: 10px; }</style>
 </head>
 <body>
-    <h1>Enregistrer un nouveau client</h1>
-    <form action="./enregistrer_client" method="POST">
-        <label for="nom">Nom :</label>
-        <input type="text" id="nom" name="nom" required><br><br>
-        <label for="prenom">Prénom :</label>
-        <input type="text" id="prenom" name="prenom" required><br><br>
-        <button type="submit">Enregistrer</button>
+    <h1>➕ Ajouter une tâche</h1>
+    <form method="post">
+        <label>Titre :</label><br>
+        <input type="text" name="titre" required><br>
+
+        <label>Description :</label><br>
+        <textarea name="description"></textarea><br>
+
+        <label>Date d'échéance :</label><br>
+        <input type="date" name="date_echeance" required><br><br>
+
+        <input type="submit" value="Enregistrer">
     </form>
+    <br>
+    <a href="/taches">Annuler</a>
 </body>
 </html>
