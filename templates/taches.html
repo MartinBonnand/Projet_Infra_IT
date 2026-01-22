@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mes Tâches</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .tache { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        .terminee { text-decoration: line-through; color: gray; }
+        .btn { text-decoration: none; padding: 5px 10px; border-radius: 3px; color: white; }
+        .btn-green { background-color: #27ae60; }
+        .btn-red { background-color: #e74c3c; }
+    </style>
+</head>
+<body>
+    <h1>📋 Ma liste de tâches</h1>
+    <a href="/">⬅ Accueil</a> | <a href="/taches/ajouter">Ajouter une tâche</a>
+    <hr>
+
+    {% for tache in taches %}
+        <div class="tache">
+            <h3 class="{{ 'terminee' if tache['terminee'] }}">{{ tache['titre'] }}</h3>
+            <p>{{ tache['description'] }}</p>
+            <p><small>📅 Échéance : {{ tache['date_echeance'] }}</small></p>
+
+            {% if not tache['terminee'] %}
+                <a href="{{ url_for('terminer_tache', id=tache['id']) }}" class="btn btn-green">✔ Terminer</a>
+            {% else %}
+                <span>✅ Tâche accomplie</span>
+            {% endif %}
+            
+            <a href="{{ url_for('supprimer_tache', id=tache['id']) }}" class="btn btn-red" onclick="return confirm('Supprimer ?')">🗑 Supprimer</a>
+        </div>
+    {% else %}
+        <p>Aucune tâche pour le moment. Reposez-vous ! 😴</p>
+    {% endfor %}
+</body>
+</html>
