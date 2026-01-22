@@ -1,1 +1,67 @@
 
+/* Style global pour toutes les pages */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+}
+
+/* Fond d'écran fixe et flouté */
+.bg-image {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Lien direct vers l'image correspondante à ton Pinterest */
+    background: url('https://i.pinimg.com/originals/72/48/68/724868502513409428.jpg') no-repeat center center fixed;
+    background-size: cover;
+    filter: blur(10px) brightness(0.6);
+    z-index: -1;
+    transform: scale(1.1);
+}
+
+/* Conteneur effet "Verre" (appliqué à ton contenu principal) */
+.glass-box {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 30px;
+    margin: 50px auto;
+    width: 90%;
+    max-width: 800px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Boutons stylés */
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    transition: 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-main { background: #3498db; }
+.btn-success { background: #27ae60; }
+.btn-danger { background: #e74c3c; }
+.btn:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+/* Formulaires */
+input, textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
